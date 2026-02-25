@@ -1,0 +1,57 @@
+# FILE: render.yaml (VANGUARD MEDICAL 3D GEOMETRIC MONOREPO)
+services:
+  # ==========================================================
+  # ☀️ THE SUN NODE: VANGUARD MAINFRAME
+  # ==========================================================
+  - type: web
+    name: vanguard-mainframe-trideca
+    env: docker
+    rootDir: Vanguard_Mainframe
+    plan: standard 
+    region: ohio
+    healthCheckPath: /docs
+    
+    disk:
+      name: mainframe-connectome-memory
+      mountPath: /app/Vanguard_Build_Output
+      sizeGB: 1
+      
+    envVars:
+      - key: NODE_ID
+        value: "0" 
+      - key: PILLAR_TYPE
+        value: "VANGUARD_MAINFRAME_TYPE_I"
+      - key: MAX_THERMAL_CAPACITY
+        value: "85.0"
+      - key: GOOGLE_API_KEY
+        sync: false 
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  # ==========================================================
+  # 🌍 THE PLANET NODE: VANGUARD SWARM WORKER 1
+  # ==========================================================
+  - type: web
+    name: vanguard-swarm-worker-1
+    env: docker
+    rootDir: Vanguard_Swarm 
+    plan: standard
+    region: ohio
+    healthCheckPath: /
+    
+    disk:
+      name: swarm-connectome-memory
+      mountPath: /app/Vanguard_Swarm_Output
+      sizeGB: 1
+
+    envVars:
+      - key: NODE_ID
+        value: "1"
+      - key: PILLAR_TYPE
+        value: "VANGUARD_SWARM_TYPE_I"
+      - key: MAX_THERMAL_CAPACITY
+        value: "85.0"
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
