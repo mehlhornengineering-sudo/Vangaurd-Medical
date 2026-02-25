@@ -1,0 +1,11 @@
+fastapi==0.109.0
+uvicorn==0.27.0
+httpx==0.26.0
+pydantic==2.6.0
+python-multipart==0.0.9
+google-generativeai==0.3.2
+anthropic==0.18.1
+psutil==5.9.8
+numpy
+scipy
+uvloop
