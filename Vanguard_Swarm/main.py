@@ -1,11 +1,23 @@
 import os, json, uvicorn, psutil, asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 import anthropic
 
 app = FastAPI(title="Vanguard Swarm Node - 3D Geometric OS")
+
+# --- SECURE CORS CLEARANCE ---
+app.add_middleware(
+    CORSMiddleware,
+    # The Vault Door: Only the Base44 Access Point is allowed inside
+    allow_origins=["https://vanguard-access-point.base44.app"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# -------------------------------
 
 NODE_ID = int(os.getenv("NODE_ID", "1"))
 MAX_THERMAL_CAPACITY = float(os.getenv("MAX_THERMAL_CAPACITY", "85.0"))
@@ -123,3 +135,7 @@ async def execute_task(payload: SubAtomicPayload):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=10000)
+
+
+          
+       
