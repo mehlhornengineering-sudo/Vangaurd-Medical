@@ -1,7 +1,16 @@
+# --- CORE API & ASYNC ENGINE ---
 fastapi==0.109.0
 uvicorn==0.27.0
 uvloop==0.19.0
 httpx==0.26.0
 python-multipart==0.0.9
+
+# --- NEURAL & AI CORE (DUAL-CORE) ---
 google-generativeai==0.3.2
+anthropic==0.18.1
 pydantic==2.6.0
+
+# --- COMPUTATIONAL & SYSTEM LOGIC ---
+numpy
+scipy
+psutil==5.9.8
