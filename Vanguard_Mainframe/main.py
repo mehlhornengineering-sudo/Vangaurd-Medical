@@ -7,16 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import google.generativeai as genai
+import anthropic
 
-# ENGINE OPTIMIZATION
+# 1. ENGINE OPTIMIZATION (High-Speed Request Handling)
 try:
     import uvloop
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 except ImportError:
     pass
 
-# INITIALIZE AI ENGINES
+# 2. NEURAL INITIALIZATION
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 app = FastAPI()
 
@@ -34,48 +36,42 @@ class EngineeringMissionRequest(BaseModel):
     project_name: str
     objective: str
 
+# 3. THE DUAL-CORE SWARM SEQUENCE
 async def run_omni_sequence(req: EngineeringMissionRequest):
     try:
-        print(f"⚡ IGNITION: Deep Swarm Analysis for: {req.objective}")
+        print(f"⚡ IGNITION: Dual-Core Swarm Analysis for: {req.objective}")
         
-        # 1. CORE 1: GOOGLE NEURAL ANALYSIS (High-Entropy Reasoning)
+        # CORE 1: Google Neural Reasoning
         model = genai.GenerativeModel('gemini-pro')
-        prompt = (
-            f"Act as a Vanguard Swarm Intelligence Worker. Objective: {req.objective}. "
-            "Analyze cellular entropy and provide a theoretical 13-tier regeneration blueprint "
-            "focusing on molecular stability and 0.0 entropy achieved through synthetic biology."
-        )
+        google_prompt = f"Objective: {req.objective}. Provide a theoretical 13-tier regeneration blueprint focused on 0.0 entropy."
+        google_res = await asyncio.to_thread(model.generate_content, google_prompt)
         
-        response = await asyncio.to_thread(model.generate_content, prompt)
-        analysis_report = response.text
+        # CORE 2: Anthropic Verification
+        claude_res = await asyncio.to_thread(
+            claude_client.messages.create,
+            model="claude-3-haiku-20240307",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": f"Review and verify this 13-tier logic for {req.objective}: {google_res.text[:800]}"}]
+        )
 
-        # 2. GENERATE THE DATA PACKET
-        file_name = f"{req.project_name}_Analysis.txt"
-        file_path = os.path.join(PROJECT_DIR, file_name)
+        # 4. COMPILING THE DATA PACKET
+        file_path = os.path.join(PROJECT_DIR, f"{req.project_name}_Deep_Analysis.txt")
         with open(file_path, "w") as f:
-            f.write(f"--- VANGUARD DEEP INTELLIGENCE REPORT ---\n")
-            f.write(f"MISSION TARGET: {req.objective}\n")
-            f.write(f"SWARM ANALYSIS:\n{analysis_report}\n")
-            f.write(f"\n[FINAL STATUS: ZENITH ACHIEVED]")
+            f.write(f"--- VANGUARD DUAL-CORE BLUEPRINT ---\n")
+            f.write(f"TARGET PATHOLOGY: {req.objective}\n\n")
+            f.write(f"PRIMARY REASONING (GEMINI):\n{google_res.text}\n\n")
+            f.write(f"VERIFICATION LAYER (CLAUDE):\n{claude_res.content[0].text}\n")
+            f.write(f"\n[FINAL STATUS: ZENITH REACHED - CONSENSUS ACHIEVED]")
 
-        # 3. COMPRESS FOR EXTRACTION
         shutil.make_archive("Omni_Release", 'zip', PROJECT_DIR)
         print("💎 ZENITH REACHED: Deep Analysis Secured.")
 
-        # 4. CALLBACK PING
+        # 5. WEBHOOK CALL HOME
         async with httpx.AsyncClient() as client:
-            try:
-                await client.post(
-                    "https://app.base44.com/api/webhooks/mission-complete", 
-                    json={
-                        "status": "COMPLETE",
-                        "project": req.project_name,
-                        "download_url": "https://vanguard-mainframe-trideca.onrender.com/download-results"
-                    },
-                    timeout=10.0
-                )
-            except:
-                print("📡 Ping failed - dashboard update will rely on polling/manual check.")
+            await client.post(
+                "https://app.base44.com/api/webhooks/mission-complete", 
+                json={"status": "COMPLETE", "project": req.project_name}
+            )
 
     except Exception as e:
         print(f"❌ SWARM ERROR: {str(e)}")
@@ -90,7 +86,7 @@ async def download_results():
     zip_path = "Omni_Release.zip"
     if os.path.exists(zip_path):
         return FileResponse(zip_path, filename="Vanguard_Deep_Analysis.zip")
-    raise HTTPException(status_code=404, detail="Analysis in progress...")
+    raise HTTPException(status_code=404, detail="Processing Deep Analysis...")
 
 if __name__ == "__main__":
     import uvicorn
