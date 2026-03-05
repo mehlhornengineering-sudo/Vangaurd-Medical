@@ -1,22 +1,25 @@
 import os
 import shutil
 import asyncio
-import httpx  
+import httpx
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+import google.generativeai as genai
 
-# --- ENGINE OPTIMIZATION ---
+# ENGINE OPTIMIZATION
 try:
     import uvloop
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 except ImportError:
     pass
 
+# INITIALIZE AI ENGINES
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
 app = FastAPI()
 
-# SECURITY PROTOCOL (CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,19 +34,35 @@ class EngineeringMissionRequest(BaseModel):
     project_name: str
     objective: str
 
-# --- THE SWARM SEQUENCE WITH WEBHOOK ---
 async def run_omni_sequence(req: EngineeringMissionRequest):
     try:
-        print(f"⚡ IGNITION: Starting Swarm Sequence...")
-        await asyncio.sleep(15) 
+        print(f"⚡ IGNITION: Deep Swarm Analysis for: {req.objective}")
         
-        file_path = os.path.join(PROJECT_DIR, "blueprint.txt")
-        with open(file_path, "w") as f:
-            f.write(f"Vanguard Mission: {req.objective}\nStatus: Achievement Unlocked.")
-            
-        shutil.make_archive("Omni_Release", 'zip', PROJECT_DIR)
-        print("💎 ZENITH REACHED.")
+        # 1. CORE 1: GOOGLE NEURAL ANALYSIS (High-Entropy Reasoning)
+        model = genai.GenerativeModel('gemini-pro')
+        prompt = (
+            f"Act as a Vanguard Swarm Intelligence Worker. Objective: {req.objective}. "
+            "Analyze cellular entropy and provide a theoretical 13-tier regeneration blueprint "
+            "focusing on molecular stability and 0.0 entropy achieved through synthetic biology."
+        )
+        
+        response = await asyncio.to_thread(model.generate_content, prompt)
+        analysis_report = response.text
 
+        # 2. GENERATE THE DATA PACKET
+        file_name = f"{req.project_name}_Analysis.txt"
+        file_path = os.path.join(PROJECT_DIR, file_name)
+        with open(file_path, "w") as f:
+            f.write(f"--- VANGUARD DEEP INTELLIGENCE REPORT ---\n")
+            f.write(f"MISSION TARGET: {req.objective}\n")
+            f.write(f"SWARM ANALYSIS:\n{analysis_report}\n")
+            f.write(f"\n[FINAL STATUS: ZENITH ACHIEVED]")
+
+        # 3. COMPRESS FOR EXTRACTION
+        shutil.make_archive("Omni_Release", 'zip', PROJECT_DIR)
+        print("💎 ZENITH REACHED: Deep Analysis Secured.")
+
+        # 4. CALLBACK PING
         async with httpx.AsyncClient() as client:
             try:
                 await client.post(
@@ -55,9 +74,8 @@ async def run_omni_sequence(req: EngineeringMissionRequest):
                     },
                     timeout=10.0
                 )
-                print("📡 PING SENT: Base44 notified.")
-            except Exception as ping_error:
-                print(f"⚠️ Webhook failed (Base44 might not be listening): {ping_error}")
+            except:
+                print("📡 Ping failed - dashboard update will rely on polling/manual check.")
 
     except Exception as e:
         print(f"❌ SWARM ERROR: {str(e)}")
@@ -71,11 +89,9 @@ async def start_mission(req: EngineeringMissionRequest, bt: BackgroundTasks):
 async def download_results():
     zip_path = "Omni_Release.zip"
     if os.path.exists(zip_path):
-        return FileResponse(zip_path, filename="Vanguard_Blueprint.zip")
-    raise HTTPException(status_code=404, detail="Processing...")
+        return FileResponse(zip_path, filename="Vanguard_Deep_Analysis.zip")
+    raise HTTPException(status_code=404, detail="Analysis in progress...")
 
-# --- BOOTSTRAP ---
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=10000)
-
