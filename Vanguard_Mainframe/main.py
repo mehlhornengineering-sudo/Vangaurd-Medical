@@ -18,7 +18,6 @@ except ImportError:
     pass
 
 # 2. NEURAL INITIALIZATION
-# Ensure these keys are set in your Render Environment Variables
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -114,8 +113,6 @@ async def download_vault():
         return FileResponse(zip_path, filename="Vanguard_Full_Vault.zip")
     raise HTTPException(status_code=404, detail="Vault is empty or processing.")
 
-# --- BOOTSTRAP ---
 if __name__ == "__main__":
     import uvicorn
-    # Use port 10000 for Render
     uvicorn.run(app, host="0.0.0.0", port=10000)
