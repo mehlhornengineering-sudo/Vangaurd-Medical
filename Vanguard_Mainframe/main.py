@@ -2,6 +2,7 @@ import os
 import shutil
 import asyncio
 import httpx
+from datetime import datetime
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -16,7 +17,8 @@ try:
 except ImportError:
     pass
 
-# 2. NEURAL INITIALIZATION (Using Environment Variables)
+# 2. NEURAL INITIALIZATION
+# Ensure these keys are set in your Render Environment Variables
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -30,17 +32,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-PROJECT_DIR = "Vanguard_Build_Output"
-os.makedirs(PROJECT_DIR, exist_ok=True)
+# --- THE VAULT SETUP ---
+VAULT_DIR = "Vanguard_Vault"
+os.makedirs(VAULT_DIR, exist_ok=True)
 
 class EngineeringMissionRequest(BaseModel):
     project_name: str
     objective: str
 
-# 3. THE DUAL-CORE SWARM SEQUENCE + VALIDATION
+# 3. THE DUAL-CORE SWARM SEQUENCE + PERSISTENCE
 async def run_omni_sequence(req: EngineeringMissionRequest):
     try:
-        print(f"⚡ IGNITION: Dual-Core Swarm Analysis for: {req.objective}")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        print(f"⚡ VAULT IGNITION: Processing {req.project_name} at {timestamp}")
         
         # --- CORE A: Google Neural Reasoning ---
         model = genai.GenerativeModel('gemini-pro')
@@ -55,32 +59,28 @@ async def run_omni_sequence(req: EngineeringMissionRequest):
         claude_res = await asyncio.to_thread(
             claude_client.messages.create,
             model="claude-3-haiku-20240307",
-            max_tokens=1000,
+            max_tokens=1500,
             messages=[{
                 "role": "user", 
-                "content": f"Review and verify this 13-tier molecular logic for {req.objective}: {google_res.text[:800]}"
+                "content": f"Review and verify this 13-tier molecular logic for {req.objective}: {google_res.text[:1000]}"
             }]
         )
 
-        # --- VALIDATION LOGIC (Testing the Swarm's convergence) ---
-        match_score = "HIGH" if (req.objective[:8].lower() in google_res.text.lower()) else "ANALYZING"
-        
-        file_name = f"{req.project_name}_Swarm_Validation.txt"
-        file_path = os.path.join(PROJECT_DIR, file_name)
+        # --- SAVE TO PERSISTENT VAULT ---
+        file_name = f"CURE_{req.project_name}_{timestamp}.txt"
+        file_path = os.path.join(VAULT_DIR, file_name)
         
         with open(file_path, "w") as f:
-            f.write(f"--- VANGUARD SWARM VALIDATION REPORT ---\n")
-            f.write(f"MISSION TARGET: {req.objective}\n")
-            f.write(f"TEST FEAT: Molecular Convergence Check\n")
-            f.write(f"VALIDATION SCORE: {match_score}\n")
-            f.write(f"----------------------------------------\n\n")
-            f.write(f"CORE A (GEMINI) LOGIC SUMMARY:\n{google_res.text[:1000]}\n\n")
-            f.write(f"CORE B (CLAUDE) VERIFICATION:\n{claude_res.content[0].text[:1000]}\n")
-            f.write(f"\n[SWARM STATUS: OPERATIONAL - ZENITH ACHIEVED]")
+            f.write(f"--- VANGUARD PERMANENT RECORD ---\n")
+            f.write(f"TIMESTAMP: {timestamp}\n")
+            f.write(f"MISSION TARGET: {req.objective}\n\n")
+            f.write(f"PRIMARY ANALYSIS (GEMINI):\n{google_res.text}\n\n")
+            f.write(f"VERIFICATION LAYER (CLAUDE):\n{claude_res.content[0].text}\n")
+            f.write(f"\n[STATUS: STORED IN VAULT - ZENITH ACHIEVED]")
 
-        # 4. COMPRESS FOR EXTRACTION
-        shutil.make_archive("Omni_Release", 'zip', PROJECT_DIR)
-        print(f"💎 ZENITH REACHED: {req.project_name} Secured.")
+        # 4. UPDATE MASTER ARCHIVE
+        shutil.make_archive("Omni_Release", 'zip', VAULT_DIR)
+        print(f"💎 ZENITH SECURED: File saved to {file_path}")
 
         # 5. WEBHOOK CALL HOME (Ping Base44)
         async with httpx.AsyncClient() as client:
@@ -90,30 +90,32 @@ async def run_omni_sequence(req: EngineeringMissionRequest):
                     json={
                         "status": "COMPLETE", 
                         "project": req.project_name,
-                        "download_url": "https://vanguard-mainframe-trideca.onrender.com/download-results"
+                        "file_id": file_name,
+                        "download_url": "https://vanguard-mainframe-trideca.onrender.com/download-vault"
                     },
                     timeout=10.0
                 )
                 print("📡 PING SENT: Base44 notified.")
-            except Exception as e:
-                print(f"⚠️ Webhook failed: {e}")
+            except:
+                print("📡 Ping failed - dashboard update will rely on manual retrieval.")
 
     except Exception as e:
-        print(f"❌ SWARM ERROR: {str(e)}")
+        print(f"❌ VAULT ERROR: {str(e)}")
 
 @app.post("/start")
 async def start_mission(req: EngineeringMissionRequest, bt: BackgroundTasks):
     bt.add_task(run_omni_sequence, req)
-    return {"status": "MISSION_INITIATED", "mainframe_node": 0}
+    return {"status": "VAULT_PROCESSING_STARTED", "vault_path": VAULT_DIR}
 
-@app.get("/download-results")
-async def download_results():
+@app.get("/download-vault")
+async def download_vault():
     zip_path = "Omni_Release.zip"
     if os.path.exists(zip_path):
-        return FileResponse(zip_path, filename="Vanguard_Swarm_Analysis.zip")
-    raise HTTPException(status_code=404, detail="Analysis still in progress...")
+        return FileResponse(zip_path, filename="Vanguard_Full_Vault.zip")
+    raise HTTPException(status_code=404, detail="Vault is empty or processing.")
 
 # --- BOOTSTRAP ---
 if __name__ == "__main__":
     import uvicorn
+    # Use port 10000 for Render
     uvicorn.run(app, host="0.0.0.0", port=10000)
